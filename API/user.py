@@ -7,4 +7,8 @@ class User:
         self.data = data
 
     def authentication(self):
-        return self.data
+        dbo = DBOHandler()
+        if dbo.get_error() == {}:
+            return dbo.get_info_server()
+        else:
+            return dbo.get_error()
