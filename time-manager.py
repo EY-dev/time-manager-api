@@ -35,6 +35,7 @@ class Response:
 
     def request_method_run(self):
         def request_method_get():
+            self.start_response('200 OK', self.header)
             return [json.dumps(self.query_string, indent=4).encode()]
 
         def request_method_post():
@@ -42,9 +43,23 @@ class Response:
             body = (self.environ['wsgi.input'].read(content_length)).decode("utf-8")
             handler = APIHandler(self.query_string, body)
             run = getattr(handler, handler.method)
-            return [json.dumps(run(), indent=4).encode()]
+            result = run()
+            if len(result) > 0:
+                if 'error' in result:
+                    self.start_response('511 NOT OK', self.header)
+                else:
+                    if 'cookies' in result:
+                        cookies = result.pop('cookies')
+                        for key in cookies:
+                            self.header.append(('Set-Cookie', '{key}={value}; /; SameSite=none; Secure'.format(key=key, value=cookies[key])))
+                    self.start_response('200 OK', self.header)
+                return [json.dumps(result, indent=4).encode()]
+            else:
+                self.start_response('500 NOT OK', self.header)
+                return [json.dumps({'error': 'Something went wrong'}, indent=4).encode()]
 
         def request_method_options():
+            self.start_response('200 OK', self.header)
             return [b'OK']
 
         if self.is_request_method_get():
@@ -55,7 +70,6 @@ class Response:
             return request_method_options()
 
     def run(self):
-        self.start_response('200 OK', self.header)
         return self.request_method_run()
 
 

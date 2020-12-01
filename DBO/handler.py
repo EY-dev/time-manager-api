@@ -2,10 +2,12 @@ import pymysql.cursors
 import json
 import os
 
+from Logger.handler import LoggerIt
+
 
 class DBOHandler:
     def __init__(self):
-        self.settings = ''
+        self.logger = LoggerIt()
         self.connection = ''
         self.error = {}
         __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
@@ -39,15 +41,20 @@ class DBOHandler:
     def get_error(self):
         return self.error
 
-    def select_data(self):
+    def get_user_with_email(self, email):
+        sql = 'SELECT * FROM users WHERE email = "{email}"'.format(email=email)
+        return self.__select_data(sql)
+
+    def __select_data(self, sql):
         self.connect_db()
         try:
             with self.connection.cursor() as cursor:
-                sql = 'SELECT id, email  FROM users WHERE id = 1'
+                self.logger.write_info(sql)
                 cursor.execute(sql)
-                result = cursor.fetchone()
-        except Exception as error:
-            result = {'error': str(error)}
+                result = cursor.fetchall()
+        except pymysql.Error as error:
+            self.logger.write_error(error.args[0])
+            result = {'error': str(error.args[1])}
         finally:
             self.connection.close()
 
