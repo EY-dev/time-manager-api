@@ -7,7 +7,7 @@ from Logger.handler import LoggerIt
 
 class DBOHandler:
     def __init__(self):
-        self.logger = LoggerIt()
+        self.logger = LoggerIt.get_instance()
         self.connection = ''
         self.error = {}
         __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
@@ -41,15 +41,22 @@ class DBOHandler:
     def get_error(self):
         return self.error
 
-    def get_user_with_email(self, email):
-        sql = 'SELECT * FROM users WHERE email = "{email}"'.format(email=email)
-        return self.__select_data(sql)
-
-    def __select_data(self, sql):
+    def insert_data(self, sql):
         self.connect_db()
         try:
             with self.connection.cursor() as cursor:
-                self.logger.write_info(sql)
+                cursor.execute(sql)
+                self.connection.commit()
+        except pymysql.Error as error:
+            self.logger.write_error(error.args[0])
+            return {'error': str(error.args[1])}
+        finally:
+            self.connection.close()
+
+    def select_data(self, sql):
+        self.connect_db()
+        try:
+            with self.connection.cursor() as cursor:
                 cursor.execute(sql)
                 result = cursor.fetchall()
         except pymysql.Error as error:
@@ -59,3 +66,5 @@ class DBOHandler:
             self.connection.close()
 
         return result
+
+
