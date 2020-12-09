@@ -1,6 +1,7 @@
 import json
 from urllib import parse
 from API.user import User
+from API.events import Events
 from Logger.handler import LoggerIt
 
 
@@ -50,3 +51,7 @@ class APIHandler:
 
     def get_method(self):
         return self.__method
+
+    def get_events(self):
+        events = Events(self.__get_data)
+        return events.get_events()

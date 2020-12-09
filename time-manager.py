@@ -1,7 +1,7 @@
 import os
 import sys
 import json
-from urllib import parse
+
 from Logger.handler import LoggerIt
 
 from API.handler import APIHandler
@@ -36,8 +36,15 @@ class Response:
         return self.header
 
     def GET(self):
-        self.start_response('200 OK', self.header)
-        return [json.dumps(self.cookie, indent=4).encode()]
+        handler = APIHandler(get_params=self.query_string, header=self.header)
+        try:
+            run = getattr(handler, handler.get_method())
+            result = run()
+            self.start_response('200 OK', self.header)
+        except Exception:
+            self.start_response('501 NOT OK', self.header)
+            result = {}
+        return [json.dumps(result, indent=4).encode()]
 
     def POST(self):
         content_length = int(self.environ['CONTENT_LENGTH'])
@@ -47,7 +54,7 @@ class Response:
         result = run()
         if len(result) > 0:
             if 'error' in result:
-                self.start_response('511 NOT OK', self.header)
+                self.start_response('400 NOT OK', self.header)
             else:
                 self.header = handler.get_header()
                 self.start_response('200 OK', self.header)

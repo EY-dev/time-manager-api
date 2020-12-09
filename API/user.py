@@ -47,6 +47,7 @@ class User:
     def authentication(self, header, cookies):
         if self.check_auth(cookies):
             return (header, {
+                'id': cookies['id'],
                 'name': cookies['name'],
                 'email': cookies['email'],
             })
@@ -62,6 +63,7 @@ class User:
                                            format(key=key, value=cookies[key],
                                                   date=tomorrow.strftime("%a, %d %b %Y %H:%M:%S GMT"))))
                         return (header, {
+                            'id': cookies['id'],
                             'name': result[0]['name'],
                             'email': result[0]['email'],
                         })
